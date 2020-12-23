@@ -1,3 +1,9 @@
+# Edwin's notes
+
+* Found this tool in the api docs https://github.com/architv/soccer-cli, consiodered using it but it lacks maintenance, and it does not cover the use cases I needed for this test.
+* Read a lot here https://www.football-data.org/documentation/api
+* Database schema is more complex than the one created for this test. For example, a Player might play in many Teams, in different Leages/Competitions in different Seasons. For the sake of simplicity and because of time constraints I'll assume that none of that happens...
+
 # Santex Back-end Developer Hiring Test
  
 The goal is to make a project that exposes an API with an HTTP GET in this URI: `/import-league/{leagueCode}` . E.g., it must be possible to invoke the service using this URL:
