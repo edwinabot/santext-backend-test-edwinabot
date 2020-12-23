@@ -8,41 +8,75 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Competition',
+            name="Competition",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=256)),
-                ('code', models.CharField(max_length=32, null=True)),
-                ('area_name', models.CharField(max_length=256)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=256)),
+                ("code", models.CharField(max_length=32, null=True)),
+                ("area_name", models.CharField(max_length=256)),
             ],
         ),
         migrations.CreateModel(
-            name='Team',
+            name="Team",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=256)),
-                ('tla', models.CharField(max_length=32)),
-                ('short_name', models.CharField(max_length=64)),
-                ('area_name', models.CharField(max_length=256)),
-                ('email', models.EmailField(max_length=254)),
-                ('competition', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.competition')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=256)),
+                ("tla", models.CharField(max_length=32)),
+                ("short_name", models.CharField(max_length=64)),
+                ("area_name", models.CharField(max_length=256)),
+                ("email", models.EmailField(max_length=254)),
+                (
+                    "competition",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="api.competition",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Player',
+            name="Player",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=256)),
-                ('position', models.CharField(max_length=256)),
-                ('date_of_birth', models.DateField()),
-                ('country_of_birth', models.CharField(max_length=256)),
-                ('nationality', models.CharField(max_length=256)),
-                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.team')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=256)),
+                ("position", models.CharField(max_length=256)),
+                ("date_of_birth", models.DateField()),
+                ("country_of_birth", models.CharField(max_length=256)),
+                ("nationality", models.CharField(max_length=256)),
+                (
+                    "team",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="api.team"
+                    ),
+                ),
             ],
         ),
     ]
