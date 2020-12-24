@@ -10,7 +10,9 @@ def test_import_league_201(client):
     HttpCode 201, {"message": "Successfully imported"} -->
         When the leagueCode was successfully imported.
     """
-    response = client.get("/api/import-league/ELC")
+    response = client.get(
+        "/api/import-league/ELC", {"X-Auth-Token": os.getenv("API_KEY", "NOTOKEN")}
+    )
     assert response.status_code == 201
     assert response.json()["message"] == "Successfully imported"
 
@@ -33,6 +35,7 @@ def test_import_league_404_mocked(client):
         if the leagueCode was not found.
     """
     with requests_mock.Mocker() as mock:
+        # MOCK DEFINITION
         mock.get(
             "https://api.football-data.org/v2/competitions/SOMEBADCODE",
             json={
@@ -48,6 +51,8 @@ def test_import_league_404_mocked(client):
             },
             status_code=400,
         )
+
+        # MOCKED CALL
         response = client.get(
             "/api/import-league/SOMEBADCODE",
             {"X-Auth-Token": "SOMETOKEN"},

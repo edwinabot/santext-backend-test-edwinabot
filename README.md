@@ -3,6 +3,7 @@
 * Found this tool in the api docs https://github.com/architv/soccer-cli, consiodered using it but it lacks maintenance, and it does not cover the use cases I needed for this test.
 * Read a lot here https://www.football-data.org/documentation/api
 * Database schema is more complex than the one created for this test. For example, a Player might play in many Teams, in different Leages/Competitions in different Seasons. For the sake of simplicity and because of time constraints I'll assume that none of that happens...
+* League import would require an asynchronous implementation, more specifically I would pursue an event driven architecture, possibly using Celery in conjunction with redis, sqs or rabbitmq. I solved similar problems using AWS Lambdas, SQS, S3 and DynamoDB. Currently responses take too much time, there is an inherent variability on the response times caused by all the networking involved in it. Again, because of time constraints, I will not solve this problem in this implementation.
 
 # Santex Back-end Developer Hiring Test
  
