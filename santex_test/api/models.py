@@ -19,7 +19,7 @@ class Team(models.Model):
     tla = models.CharField(max_length=32)
     short_name = models.CharField(max_length=64)
     area_name = models.CharField(max_length=256)
-    email = models.EmailField()
+    email = models.EmailField(null=True)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
 
 

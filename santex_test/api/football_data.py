@@ -38,7 +38,7 @@ class FootballData:
                 },
             )
             response.raise_for_status()
-            return response.json()
+            return response.json().get('teams')
         except requests.HTTPError:
             raise CompetitionsTeamsError(
                 f"Failed to retrieve Teams for the Competition {code}"

@@ -5,7 +5,7 @@ import pytest
 import requests_mock
 
 
-def test_import_league_201(client):
+def test_import_league_201(client, db):
     """
     HttpCode 201, {"message": "Successfully imported"} -->
         When the leagueCode was successfully imported.

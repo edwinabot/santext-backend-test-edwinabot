@@ -6,7 +6,7 @@ from rest_framework import status
 from django.db import transaction
 
 
-from api.football_data import FootballData, CompetitionNotFound
+from api.football_data import FootballData, CompetitionNotFound, CompetitionsTeamsError
 from api.models import Competition, Team, Player
 
 
@@ -27,15 +27,18 @@ class LeagueImportView(APIView):
             raw_teams: List[Team] = football_data.get_competitions_teams(
                 competition.code
             )
-            teams = self.build_teams(raw_teams)
-        except CompetitionNotFound:
+
+            with transaction.atomic():
+                competition.save()
+                teams = self.build_teams(raw_teams, competition)
+                Team.objects.bulk_create(teams)
+                # Player.objects.bulk_create(players)
+
+        except (CompetitionNotFound, CompetitionsTeamsError):
             response = Response(
                 {"message": "Not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        with transaction.atomic():
-            competition.save()
 
         return response
 
@@ -47,9 +50,16 @@ class LeagueImportView(APIView):
         )
         return competition
 
-    def build_teams(self, raw_teams):
+    def build_teams(self, raw_teams: List[dict], competition: Competition):
         teams = [
-            Team(name="", tla="", short_name="", area_name="", email="", competition="")
+            Team(
+                name=rt.get("name"),
+                tla=rt.get("tla"),
+                short_name=rt.get("shortName"),
+                area_name=rt.get("area").get("name"),
+                email=rt.get("email"),
+                competition=competition,
+            )
             for rt in raw_teams
         ]
-        raise NotImplementedError()
+        return teams
