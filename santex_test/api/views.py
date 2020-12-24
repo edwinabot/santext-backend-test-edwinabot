@@ -96,5 +96,6 @@ class LeagueImportView(APIView):
                 team=team,
             )
             for p in raw_players
+            if p.get("role") == "PLAYER"
         ]
         return players
