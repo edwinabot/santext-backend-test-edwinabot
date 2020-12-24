@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,39 +17,25 @@ from api.models import Competition, Team, Player
 
 class LeagueImportView(APIView):
     def get(self, request, league_code, format=None):
-        football_data: FootballData = FootballData(
-            request.query_params[FootballData.AUTH_HEADER]
-        )
-
         try:
-            raw_competition: dict = football_data.get_competition(league_code)
-            raw_teams: List[dict] = football_data.get_competitions_teams(
-                raw_competition["id"]
+            if self.the_league_exists(league_code):
+                response = Response(
+                    {"message": "League already imported"},
+                    status=status.HTTP_409_CONFLICT,
+                )
+                return response
+
+            raw_competition, raw_teams, raw_players = self.extract_data(
+                request, league_code
             )
-            raw_players = {
-                team["tla"]: football_data.get_team_squad(team["id"])
-                for team in raw_teams
-            }
 
             with transaction.atomic():
-                competition: Competition = self.build_competition(raw_competition)
-                competition.save()
-                teams = self.build_teams(raw_teams, competition)
-                Team.objects.bulk_create(teams)
-                teams = Team.objects.filter(competition=competition)
-                players = []
-                for team in teams:
-                    if team.tla in raw_players:
-                        players.extend(
-                            self.build_players(raw_players.get(team.tla), team)
-                        )
-                Player.objects.bulk_create(players)
+                self.persist_data(raw_competition, raw_teams, raw_players)
 
             response = Response(
                 {"message": "Successfully imported"},
                 status=status.HTTP_201_CREATED,
             )
-
         except (CompetitionNotFound, CompetitionsTeamsError, TeamError):
             response = Response(
                 {"message": "Not found"},
@@ -57,11 +43,39 @@ class LeagueImportView(APIView):
             )
         except Exception as ex:
             response = Response(
-                ex,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"message": "Server Error"}, status=status.HTTP_504_GATEWAY_TIMEOUT
             )
 
         return response
+
+    def the_league_exists(self, code) -> bool:
+        return Competition.objects.filter(code=code).exists()
+
+    def extract_data(self, request, league_code) -> Tuple[List, List, List]:
+        football_data: FootballData = FootballData(
+            request.query_params[FootballData.AUTH_HEADER]
+        )
+
+        raw_competition: dict = football_data.get_competition(league_code)
+        raw_teams: List[dict] = football_data.get_competitions_teams(
+            raw_competition["id"]
+        )
+        raw_players = {
+            team["tla"]: football_data.get_team_squad(team["id"]) for team in raw_teams
+        }
+        return raw_competition, raw_teams, raw_players
+
+    def persist_data(self, raw_competition, raw_teams, raw_players) -> None:
+        competition: Competition = self.build_competition(raw_competition)
+        competition.save()
+        teams = self.build_teams(raw_teams, competition)
+        Team.objects.bulk_create(teams)
+        teams = Team.objects.filter(competition=competition)
+        players = []
+        for team in teams:
+            if team.tla in raw_players:
+                players.extend(self.build_players(raw_players.get(team.tla), team))
+        Player.objects.bulk_create(players)
 
     def build_competition(self, raw_competition):
         competition = Competition(

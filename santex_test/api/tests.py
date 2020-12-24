@@ -4,6 +4,12 @@ import os
 import pytest
 import requests_mock
 
+from requests.exceptions import ConnectionError
+from django.db import Error as DBError
+
+from api.views import LeagueImportView
+from api.football_data import FootballData
+
 
 def test_import_league_201(client, db):
     """
@@ -17,12 +23,7 @@ def test_import_league_201(client, db):
     assert response.json()["message"] == "Successfully imported"
 
 
-@pytest.mark.mocked
-def test_import_league_201_mocked(client, db):
-    """
-    HttpCode 201, {"message": "Successfully imported"} -->
-        When the leagueCode was successfully imported.
-    """
+def import_mock_league(client):
     # MOCK Prep
     mock_competition = {
         "id": 2016,
@@ -175,20 +176,33 @@ def test_import_league_201_mocked(client, db):
         response = client.get(
             "/api/import-league/ELC", {"X-Auth-Token": os.getenv("API_KEY", "NOTOKEN")}
         )
+        return response
 
+
+@pytest.mark.mocked
+def test_import_league_201_mocked(client, db):
+    """
+    HttpCode 201, {"message": "Successfully imported"} -->
+        When the leagueCode was successfully imported.
+    """
+    response = import_mock_league(client)
     assert response.status_code == 201
     assert response.json()["message"] == "Successfully imported"
 
 
-def test_import_league_409(client):
+@pytest.mark.mocked
+def test_import_league_409(client, db):
     """
     HttpCode 409, {"message": "League already imported"} -->
         If the given leagueCode was already imported into the DB
         (and in this case, it doesn't need to be imported again).
     """
-    response = client.get("/api/import-league/ELC")
-    assert response.status_code == 409
-    assert response.json()["message"] == "League already imported"
+    first_response = import_mock_league(client)
+    second_response = import_mock_league(client)
+    assert first_response.status_code == 201
+    assert first_response.json()["message"] == "Successfully imported"
+    assert second_response.status_code == 409
+    assert second_response.json()["message"] == "League already imported"
 
 
 @pytest.mark.mocked
@@ -237,12 +251,43 @@ def test_import_league_404(client):
     assert response.json()["message"] == "Not found"
 
 
-def test_import_league_504(client):
+@pytest.mark.mocked
+def test_import_league_504_db_error(client, db, monkeypatch):
     """
     HttpCode 504, {"message": "Server Error" } -->
         If there is any connectivity issue either with
         the football API or the DB server.
     """
-    response = client.get("/api/import-league/ELC")
+
+    def raise_db_error(*args, **kwargs):
+        raise DBError("A mock exception")
+
+    monkeypatch.setattr(LeagueImportView, "the_league_exists", raise_db_error)
+
+    response = client.get(
+        "/api/import-league/ELC",
+        {"X-Auth-Token": os.getenv("API_KEY", "NOTOKEN")},
+    )
+    assert response.status_code == 504
+    assert response.json()["message"] == "Server Error"
+
+
+@pytest.mark.mocked
+def test_import_league_504_api_error(client, db, monkeypatch):
+    """
+    HttpCode 504, {"message": "Server Error" } -->
+        If there is any connectivity issue either with
+        the football API or the DB server.
+    """
+
+    def raise_api_error(*args, **kwargs):
+        raise ConnectionError("A mock exception")
+
+    monkeypatch.setattr(FootballData, "get_competition", raise_api_error)
+
+    response = client.get(
+        "/api/import-league/ELC",
+        {"X-Auth-Token": os.getenv("API_KEY", "NOTOKEN")},
+    )
     assert response.status_code == 504
     assert response.json()["message"] == "Server Error"
