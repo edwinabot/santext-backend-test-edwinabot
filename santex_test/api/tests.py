@@ -1,4 +1,5 @@
 # https://pytest-django.readthedocs.io/en/latest/helpers.html#id2
+import requests_mock
 
 
 def test_import_league_201(client):
@@ -27,10 +28,26 @@ def test_import_league_404(client):
     HttpCode 404, {"message": "Not found" } -->
         if the leagueCode was not found.
     """
-    response = client.get(
-        "/api/import-league/SOMEBADCODE",
-        {"X-Auth-Token": "9125b1b962534f2298ddedd6d052792f"},
-    )
+    with requests_mock.Mocker() as mock:
+        mock.get(
+            "https://api.football-data.org/v2/competitions/SOMEBADCODE",
+            json={
+                "message": (
+                    "Parameter 'competitionId' is expected to be either an "
+                    "integer in a specified range or a competition code."
+                ),
+                "errorCode": 400,
+            },
+            headers={
+                "content-type": "application/json",
+                "X-Auth-Token": "SOMETOKEN",
+            },
+            status_code=400,
+        )
+        response = client.get(
+            "/api/import-league/SOMEBADCODE",
+            {"X-Auth-Token": "SOMETOKEN"},
+        )
     assert response.status_code == 404
     assert response.json()["message"] == "Not found"
 

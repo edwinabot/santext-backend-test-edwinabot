@@ -12,8 +12,9 @@ class FootballData:
     def get_competition(self, code):
         # http://api.football-data.org/v2/competitions/PL
         try:
+            url = f"{self.BASE_URL}/competitions/{code}"
             response = requests.get(
-                f"{self.BASE_URL}/competitions/{code}",
+                url,
                 headers={
                     "content-type": "application/json",
                     self.AUTH_HEADER: self.key,
