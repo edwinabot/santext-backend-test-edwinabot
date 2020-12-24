@@ -1,4 +1,7 @@
 # https://pytest-django.readthedocs.io/en/latest/helpers.html#id2
+import os
+
+import pytest
 import requests_mock
 
 
@@ -23,7 +26,8 @@ def test_import_league_409(client):
     assert response.json()["message"] == "League already imported"
 
 
-def test_import_league_404(client):
+@pytest.mark.mocked
+def test_import_league_404_mocked(client):
     """
     HttpCode 404, {"message": "Not found" } -->
         if the leagueCode was not found.
@@ -52,6 +56,19 @@ def test_import_league_404(client):
     assert response.json()["message"] == "Not found"
 
 
+def test_import_league_404(client):
+    """
+    HttpCode 404, {"message": "Not found" } -->
+        if the leagueCode was not found.
+    """
+    response = client.get(
+        "/api/import-league/SOMEBADCODE",
+        {"X-Auth-Token": os.getenv("API_KEY", "NOTOKEN")},
+    )
+    assert response.status_code == 404
+    assert response.json()["message"] == "Not found"
+
+
 def test_import_league_504(client):
     """
     HttpCode 504, {"message": "Server Error" } -->
@@ -61,13 +78,3 @@ def test_import_league_504(client):
     response = client.get("/api/import-league/ELC")
     assert response.status_code == 504
     assert response.json()["message"] == "Server Error"
-
-
-def test_import_league_501(client):
-    """
-    HttpCode 501, {"message": "Successfully imported"} -->
-        When the leagueCode was successfully imported.
-    """
-    response = client.get("/api/import-league/ELC")
-    assert response.status_code == 501
-    assert response.json() == "ELC"
