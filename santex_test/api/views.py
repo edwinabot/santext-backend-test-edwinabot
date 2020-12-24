@@ -6,38 +6,56 @@ from rest_framework import status
 from django.db import transaction
 
 
-from api.football_data import FootballData, CompetitionNotFound, CompetitionsTeamsError
+from api.football_data import (
+    FootballData,
+    CompetitionNotFound,
+    CompetitionsTeamsError,
+    TeamError,
+)
 from api.models import Competition, Team, Player
 
 
 class LeagueImportView(APIView):
     def get(self, request, league_code, format=None):
-        response = Response(
-            league_code,
-            status=status.HTTP_501_NOT_IMPLEMENTED,
-        )
-
         football_data: FootballData = FootballData(
             request.query_params[FootballData.AUTH_HEADER]
         )
 
         try:
             raw_competition: dict = football_data.get_competition(league_code)
-            competition: Competition = self.build_competition(raw_competition)
-            raw_teams: List[Team] = football_data.get_competitions_teams(
-                competition.code
+            raw_teams: List[dict] = football_data.get_competitions_teams(
+                raw_competition["id"]
             )
+            raw_players = {
+                team["tla"]: football_data.get_team_squad(team["id"])
+                for team in raw_teams[:2]
+            }
 
             with transaction.atomic():
+                competition: Competition = self.build_competition(raw_competition)
                 competition.save()
                 teams = self.build_teams(raw_teams, competition)
                 Team.objects.bulk_create(teams)
-                # Player.objects.bulk_create(players)
+                players = []
+                for team in teams:
+                    players += self.build_players(raw_players.get(team.tla), team)
+                Player.objects.bulk_create(players)
 
-        except (CompetitionNotFound, CompetitionsTeamsError):
+            response = Response(
+                {"message": "Successfully imported"},
+                status=status.HTTP_201_CREATED,
+            )
+
+        except (CompetitionNotFound, CompetitionsTeamsError, TeamError):
             response = Response(
                 {"message": "Not found"},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as ex:
+            print(ex)
+            response = Response(
+                ex,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         return response
@@ -63,3 +81,17 @@ class LeagueImportView(APIView):
             for rt in raw_teams
         ]
         return teams
+
+    def build_players(self, raw_players: List[dict], team: Team):
+        players = [
+            Player(
+                name=p.get("name"),
+                position=p.get("position"),
+                date_of_birth=p.get("dateOfBirth"),
+                country_of_birth=p.get("countryOfBirth"),
+                nationality=p.get("nationality"),
+                team=team,
+            )
+            for p in raw_players
+        ]
+        return players
