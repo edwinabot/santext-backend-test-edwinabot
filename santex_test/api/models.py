@@ -25,8 +25,8 @@ class Team(models.Model):
 
 class Player(models.Model):
     name = models.CharField(max_length=256)
-    position = models.CharField(max_length=256)
-    date_of_birth = models.DateField()
+    position = models.CharField(max_length=256, null=True)
+    date_of_birth = models.DateTimeField(null=True)
     country_of_birth = models.CharField(max_length=256)
     nationality = models.CharField(max_length=256)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)

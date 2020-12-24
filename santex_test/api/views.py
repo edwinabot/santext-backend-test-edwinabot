@@ -28,7 +28,7 @@ class LeagueImportView(APIView):
             )
             raw_players = {
                 team["tla"]: football_data.get_team_squad(team["id"])
-                for team in raw_teams[:2]
+                for team in raw_teams
             }
 
             with transaction.atomic():
@@ -36,9 +36,13 @@ class LeagueImportView(APIView):
                 competition.save()
                 teams = self.build_teams(raw_teams, competition)
                 Team.objects.bulk_create(teams)
+                teams = Team.objects.filter(competition=competition)
                 players = []
                 for team in teams:
-                    players += self.build_players(raw_players.get(team.tla), team)
+                    if team.tla in raw_players:
+                        players.extend(
+                            self.build_players(raw_players.get(team.tla), team)
+                        )
                 Player.objects.bulk_create(players)
 
             response = Response(
@@ -52,7 +56,6 @@ class LeagueImportView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as ex:
-            print(ex)
             response = Response(
                 ex,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -4,11 +4,18 @@ import time
 
 def handle_rate_limit(func):
     def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except requests.HTTPError as ex:
-            if ex.request.status_code == 429:
-                time.sleep(60)
+        attempts = 0
+        while attempts < 5:
+            try:
+                result = func(*args, **kwargs)
+                return result
+            except requests.HTTPError as ex:
+                if ex.response.status_code == 429:
+                    attempts += 1
+                    time.sleep(60)
+                else:
+                    raise ex
+        raise Exception("Retry exceeded after being rate limited")
 
     return inner
 
@@ -55,7 +62,7 @@ class FootballData:
             response.raise_for_status()
             return response.json().get("teams")
         except requests.HTTPError as ex:
-            if ex.request.status_code != 429:
+            if ex.response.status_code != 429:
                 raise CompetitionsTeamsError(
                     f"Failed to retrieve Teams for the Competition {competition_id}"
                 )
@@ -77,7 +84,7 @@ class FootballData:
             response.raise_for_status()
             return response.json().get("squad")
         except requests.HTTPError as ex:
-            if ex.request.status_code != 429:
+            if ex.response.status_code != 429:
                 raise TeamError(f"Failed to retrieve Team {team_id}")
             else:
                 raise ex
