@@ -139,6 +139,30 @@ def test_import_league_504_api_error(client, db, monkeypatch):
     assert response.json()["message"] == "Server Error"
 
 
+@pytest.mark.mocked
+def test_count_players_200_mocked(client, db):
+    """
+    HttpCode 200, {"total" : N } -->
+        Counting players of an existsing league
+    """
+    import_mock_league(client)
+    response = client.get("/api/total-players/ELC", {"X-Auth-Token": "NOTOKEN"})
+    assert response.status_code == 200
+    assert response.json()["total"] == 3
+
+
+@pytest.mark.mocked
+def test_count_players_404_mocked(client, db):
+    """
+    HttpCode 404, {"message": "Not Found"} -->
+        Counting players of an unexisting league
+    """
+    import_mock_league(client)
+    response = client.get("/api/total-players/BADLEAGUE", {"X-Auth-Token": "NOTOKEN"})
+    assert response.status_code == 404
+    assert response.json()["message"] == "Not found"
+
+
 def import_mock_league(client):
     # MOCK Prep
     mock_competition = {
