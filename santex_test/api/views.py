@@ -116,17 +116,6 @@ class LeagueImportView(APIView):
         return players
 
 
-"""
-Additionally, expose an HTTP GET in URI /total-players/{leagueCode},
-with a simple JSON response like this: {"total" : N } and HTTP Code 200.
-
-where N is the total amount of players belonging to all teams that participate
-in the given league (leagueCode). This service must rely exclusively on the data
-saved inside the DB (it must not access the API football-data.org).
-If the given leagueCode is not present into the DB, it should respond an HTTP Code 404.
-"""
-
-
 class PlayerCounterView(APIView):
     def get(self, request, league_code, format=None):
         try:
