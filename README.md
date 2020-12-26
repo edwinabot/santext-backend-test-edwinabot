@@ -4,6 +4,41 @@
 * Read a lot here https://www.football-data.org/documentation/api
 * Database schema is more complex than the one created for this test. For example, a Player might play in many Teams, in different Leages/Competitions in different Seasons. For the sake of simplicity and because of time constraints I'll assume that none of that happens...
 * League import would require an asynchronous implementation, more specifically I would pursue an event driven architecture, possibly using Celery in conjunction with redis, sqs or rabbitmq. I solved similar problems using AWS Lambdas, SQS, S3 and DynamoDB. Currently responses take too much time, there is an inherent variability on the response times caused by all the networking involved in it. Again, because of time constraints, I will not solve this problem in this implementation.
+* I chose Django and Django REST Framework because this are extremely popular, well documented, high quality tools. It provides all the tooling this tests required. Particularly the Django ORM, provides all schema migration tooling and, ofcourse all querying capabilities.
+* This system is docekrized so you can run it in any Docker-able system
+* Ofcourse the logging in this implementation is non existen. There will be a need of providing structured, valid JSON logs to ease integration with systems such as Sumo Logic, Sentry, New Relic, etc.
+
+# About the development environment
+
+You need to have a working Python 3.9 environment with Pipenv installed on it. I stringly suggest you use Pyenv and Pipenv to set your development environment. This will provide a consistent development environment accross the team and will not polute you OS python setup.
+
+To create a virtual environment for the app and run the tests you need to do:
+
+```bash
+# Set the environment
+pipenv install
+
+# Run the tests
+cd santex_test
+pipenv run pytest -m mocked
+```
+
+# About running the system
+
+This system is dockerized. Assuming you have Docker Compose installed on your system you can do `docker-compose up` to run both the Django app and the PostgreSQL containers.
+See the `.env.example` file to know what environment variables must be set in order for this system to work.
+
+## About the API
+
+You can use the two resources like this:
+
+```bash
+# Import the ELC league
+curl your_docker_host_api:8000/api/import-league/ELC?X-Auth-Token=9125b1b962534f2298ddedd6d052792f
+
+# Get the number of players in ELC
+curl your_docker_host_api:8000/api/total-players/ELC
+```
 
 ## About the tests
 
