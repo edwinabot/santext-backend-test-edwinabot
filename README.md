@@ -5,6 +5,55 @@
 * Database schema is more complex than the one created for this test. For example, a Player might play in many Teams, in different Leages/Competitions in different Seasons. For the sake of simplicity and because of time constraints I'll assume that none of that happens...
 * League import would require an asynchronous implementation, more specifically I would pursue an event driven architecture, possibly using Celery in conjunction with redis, sqs or rabbitmq. I solved similar problems using AWS Lambdas, SQS, S3 and DynamoDB. Currently responses take too much time, there is an inherent variability on the response times caused by all the networking involved in it. Again, because of time constraints, I will not solve this problem in this implementation.
 
+## About the tests
+
+There are two groups of tests: `mocked` and `not mocked`. The reason for this grouping is that the tests that are not mocked, are consuming the live football data api, and thus making them really slow. I mocked that api in a different group of tests to make more agile the development process.
+
+To run the tests you can do:
+```bash
+cd santex_test
+
+# Mocked tests
+pipenv run pytest -m mocked
+
+# Not mocked tests
+pipenv run pytest -m not_mocked
+
+
+# All the tests
+pipenv run pytest
+```
+
+Tests results (pay attention to the duration):
+```
+edwin@EDWIN-ROG-STRIX:~/santext-backend-test-edwinabot/santex_test$ pipenv run pytest -m mocked
+Loading .env environment variables…
+============================= test session starts ============================
+platform linux -- Python 3.9.1, pytest-6.2.1, py-1.10.0, pluggy-0.13.1
+django: settings: santex_test.settings (from ini)
+rootdir: /home/edwin/santext-backend-test-edwinabot, configfile: pytest.ini
+plugins: django-4.1.0, requests-mock-1.8.0
+collected 7 items / 2 deselected / 5 selected                                                                                                                                                                       
+
+api/tests.py .....                                                       [100%]
+
+======================== 5 passed, 2 deselected in 0.30s ======================
+```
+
+```
+edwin@EDWIN-ROG-STRIX:~/santext-backend-test-edwinabot/santex_test$ pipenv run pytest -m not_mocked
+Loading .env environment variables…
+============================= test session starts =============================
+platform linux -- Python 3.9.1, pytest-6.2.1, py-1.10.0, pluggy-0.13.1
+django: settings: santex_test.settings (from ini)
+rootdir: /home/edwin/santext-backend-test-edwinabot, configfile: pytest.ini
+plugins: django-4.1.0, requests-mock-1.8.0
+collected 7 items / 5 deselected / 2 selected                                                                                                                                                                       
+
+api/tests.py ..                                                          [100%]
+
+=================== 2 passed, 5 deselected in 221.02s (0:03:41) ===============
+```
 # Santex Back-end Developer Hiring Test
  
 The goal is to make a project that exposes an API with an HTTP GET in this URI: `/import-league/{leagueCode}` . E.g., it must be possible to invoke the service using this URL:

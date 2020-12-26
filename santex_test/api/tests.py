@@ -11,6 +11,7 @@ from api.views import LeagueImportView
 from api.football_data import FootballData
 
 
+@pytest.mark.not_mocked
 def test_import_league_201(client, db):
     """
     HttpCode 201, {"message": "Successfully imported"} -->
@@ -206,7 +207,7 @@ def test_import_league_409(client, db):
 
 
 @pytest.mark.mocked
-def test_import_league_404_mocked(client):
+def test_import_league_404_mocked(client, db):
     """
     HttpCode 404, {"message": "Not found" } -->
         if the leagueCode was not found.
@@ -238,7 +239,8 @@ def test_import_league_404_mocked(client):
     assert response.json()["message"] == "Not found"
 
 
-def test_import_league_404(client):
+@pytest.mark.not_mocked
+def test_import_league_404(client, db):
     """
     HttpCode 404, {"message": "Not found" } -->
         if the leagueCode was not found.
