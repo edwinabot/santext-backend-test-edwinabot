@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
+from django.db.models import Count
 
 
 from api.football_data import (
@@ -113,3 +114,20 @@ class LeagueImportView(APIView):
             if p.get("role") == "PLAYER"
         ]
         return players
+
+
+class PlayerCounterView(APIView):
+    def get(self, request, league_code, format=None):
+        try:
+            competition = Competition.objects.get(code=league_code)
+            annotation = competition.team_set.all().aggregate(Count("player"))
+            response = Response(
+                {"total": annotation.get("player__count")},
+                status=status.HTTP_200_OK,
+            )
+        except Competition.DoesNotExist:
+            response = Response(
+                {"message": "Not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return response
