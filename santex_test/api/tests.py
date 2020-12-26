@@ -148,7 +148,7 @@ def test_count_players_200_mocked(client, db):
     import_mock_league(client)
     response = client.get("/api/total-players/ELC", {"X-Auth-Token": "NOTOKEN"})
     assert response.status_code == 200
-    assert response.json()["total"] == 3
+    assert response.json()["total"] == 2
 
 
 @pytest.mark.mocked
